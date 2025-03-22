@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Authentication</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #000;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 50px 30px;
+            border-radius: 15px;
+            box-shadow: 0px 4px 15px rgba(255, 182, 193, 0.3);
+            width: 100%;
+            max-width: 400px;
+            min-height: 550px; /* 🔥 Increased height */
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        h2 {
+            font-size: 24px;
+            color: #ff99cc;
+            margin-bottom: 30px; /* 🔥 Added more spacing below the header */
+        }
+
+        .signup-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            padding: 8px 18px;
+            border: 2px solid #6699ff;
+            background: transparent;
+            color: #6699ff;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.3s ease-in-out;
+        }
+
+        .signup-btn:hover {
+            background: #6699ff;
+            color: white;
+        }
+
+        .input-group {
+            width: 100%;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input {
+            width: 80%;
+            padding: 12px;
+            margin: 10px 0; /* 🔥 Added more spacing between inputs */
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            outline: none;
+            transition: 0.3s ease-in-out;
+        }
+
+        input::placeholder {
+            color: #ddd;
+        }
+
+        input:focus {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn {
+            width: 80%;
+            padding: 12px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease-in-out, transform 0.2s;
+            margin-top: 10px;
+        }
+
+        .login-btn {
+            background: #ff99cc;
+        }
+
+        .login-btn:hover {
+            background: #ff66b2;
+            transform: scale(1.05);
+        }
+
+        .logout-btn {
+            background: #ff4d4d;
+        }
+
+        .logout-btn:hover {
+            background: #ff3333;
+        }
+
+        .status {
+            font-size: 14px;
+            color: #ffccdd;
+            margin-top: 30px; 
+        }
+    </style>
+</head>
+<br>
+<br>
+<body>
+    <br>
+    <div class="container">
+        <br>
+        <h2>Fireb🔥se <br> Authentication</h2>
+
+        <button class="signup-btn" onclick="registerUser()">Sign Up</button>
+
+        <div class="input-group">
+            <input type="email" id="loginEmail" placeholder="Enter Email">
+            <input type="password" id="loginPassword" placeholder="Enter Password">
+        </div>
+
+        <button class="btn login-btn" onclick="loginUser()">Login</button>
+        <button class="btn logout-btn" onclick="logoutUser()">Logout</button>
+
+        <p class="status" id="userStatus">Not logged in! ❌</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        // 🔥 Firebase Configuration
+        const firebaseConfig = {
+ 
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
+        const db = getFirestore(app);
+
+        // Function to Register User and Save to Firestore
+        function registerUser() {
+            const email = document.getElementById("loginEmail").value;
+            const password = document.getElementById("loginPassword").value;
+
+            createUserWithEmailAndPassword(auth, email, password)
+                .then(async (userCredential) => {
+                    const user = userCredential.user;
+                    alert("✅ User registered successfully!");
+
+                    // 🔥 Save user data to Firestore
+                    await setDoc(doc(db, "users", user.uid), {
+                        email: user.email,
+                        userId: user.uid,
+                        createdAt: new Date().toISOString()
+                    });
+
+                    alert("✅ User data saved to Firestore!");
+                })
+                .catch(error => alert("❌ Error: " + error.message));
+        }
+
+        // Function to Login User
+        function loginUser() {
+            const email = document.getElementById("loginEmail").value;
+            const password = document.getElementById("loginPassword").value;
+
+            signInWithEmailAndPassword(auth, email, password)
+                .then(userCredential => alert("✅ User logged in!"))
+                .catch(error => alert("❌ Error: " + error.message));
+        }
+
+        // Function to Logout User
+        function logoutUser() {
+            signOut(auth).then(() => alert("✅ User logged out!"))
+                .catch(error => alert("❌ Error: " + error.message));
+        }
+
+        // Display User Authentication Status
+        onAuthStateChanged(auth, (user) => {
+            const userStatus = document.getElementById("userStatus");
+            if (user) {
+                userStatus.innerText = `✅ Logged in as: ${user.email}`;
+            } else {
+                userStatus.innerText = "🔒 Not logged in";
+            }
+        });
+
+        // Attach functions to window so they can be accessed in HTML
+        window.registerUser = registerUser;
+        window.loginUser = loginUser;
+        window.logoutUser = logoutUser;
+    </script>
+</body>
+</html>
